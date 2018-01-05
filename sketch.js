@@ -4,14 +4,16 @@ function preload() {
 function setup() {
   createCanvas(1000, 700);
   textSize(40);
-  gotoMenu();
+  gotoStart();
 }
 var timer;
-var scene = 0;
+//var scene = 4;
 var ship;
 var particles = [];
 var isover = false;
 var level = 1;
+var messages = ["You're still trash.", "You're worse than the garbage\n you just destroyed.", "You'll never amount to anything.", "Here you are sitting around \nplaying video games. This is why\nwe haven't cured cancer.", "Your most productive years were \nages 5 to 10. In that time you \ndid nothing.", ""];
+var message;
 
 function Button(x, y, text, onClick) {
   this.x = x;
@@ -380,9 +382,11 @@ function gotoInfo() {
 }
 function gotoGameover() {
   scene = 3;
+  message = messages[int(random(0, messages.length-1))]
 }
 function gotoWin() {
   scene = 4;
+  message = messages[int(random(0, messages.length-1))]
 }
 
 function menu() {
@@ -470,7 +474,7 @@ function gameover() {
     main();
     fill(255, 0, 0);
     textSize(40);
-    text('Game Over', 370, 330);
+    text('Game Over\n' + message, 370, 330);
   }
 }
 
@@ -481,7 +485,7 @@ function win() {
   } else {
     fill(255, 0, 0);
     textSize(40);
-    text('You win!', 370, 330);
+    text('Mission Success!\n' + message, 370, 330);
   }
 
 }
