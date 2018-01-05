@@ -4,7 +4,7 @@ function preload() {
 function setup() {
   createCanvas(1000, 700);
   textSize(40);
-  gotoStart();
+  gotoMenu();
 }
 var timer;
 //var scene = 4;
