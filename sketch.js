@@ -365,7 +365,7 @@ function gotoStart() {
   particles = [];
   ship = new Ship(200, 200);
   particles.push(ship);
-  for (var i = 1; i <= 5; i++) {
+  for (var i = 1; i <= 2 + 3*level; i++) {
     particles[i] = new Asteroid(random(0, 1000), random(0, 700));
     force = createVector(random(0, 30), random(0, 30));
     console.log('Asteroid created! Force: ' + force);
@@ -449,15 +449,15 @@ function main() {
   }
   fill(0, 255, 0, 100);
   text('Level ' + level, 500, 100)
-  if (particles[0].health <= 0) {
-    if (!isover) {
+  if (!isover) {
+    if (particles[0].health <= 0) {
       gotoGameover();
       isover = true;
       timer = frameCount;
+    } else if (particles.length === 1) {
+      timer = frameCount;
+      gotoWin();
     }
-  } else if (particles.length === 1 && !isover) {
-    timer = frameCount;
-    gotoWin();
   }
 }
 
