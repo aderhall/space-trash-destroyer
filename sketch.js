@@ -362,6 +362,7 @@ function gotoMenu() {
   binfo = new Button(400, 450, 'Info', gotoInfo);
 }
 function gotoStart() {
+  isover = false;
   scene = 1;
   var force;
   particles = [];
