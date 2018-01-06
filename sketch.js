@@ -8,7 +8,7 @@ function setup() {
   currentShip = new Ship();
   currentShip.wings = new Zephyrates();
   currentShip.engine = new Cyclomaniac();
-  currentShip.weapon = new Hyperbeam();
+  currentShip.weapon = new Supercannon();
   console.log(currentShip);
 }
 var timer;
@@ -105,6 +105,7 @@ function Weapon() {
   this.cooldown = 0;
   this.mass = 0.2;
   this.cooltime = 50;
+  this.ammo = Bullet;
 }
 Weapon.prototype.engage = function(protoShip) {
   if (keyIsPressed && key === 'a') {
@@ -120,7 +121,7 @@ Weapon.prototype.engage = function(protoShip) {
 Weapon.prototype.fire = function(protoShip) {
   var bulletVel = createVector(cos(radians(protoShip.orientation-90)), sin(radians(protoShip.orientation-90)))
   bulletVel.mult(15);
-  particles.push(new Bullet(protoShip.position.x + 45*cos(radians(protoShip.orientation-90)), protoShip.position.y + 45*sin(radians(protoShip.orientation-90)), bulletVel));
+  particles.push(new this.ammo(protoShip.position.x + 45*cos(radians(protoShip.orientation-90)), protoShip.position.y + 45*sin(radians(protoShip.orientation-90)), bulletVel));
 };
 
 function Poofer() {
@@ -163,14 +164,24 @@ Laser.prototype = Object.create(Weapon.prototype);
 function Laser() {
   Weapon.call(this);
   this.cooltime = 20;
+  this.ammo = LaserBeam;
 }
 Laser.prototype = Object.create(Weapon.prototype);
 
 function Hyperbeam() {
   Weapon.call(this);
   this.cooltime = 5;
+  this.ammo = HyperBullet;
 }
 Hyperbeam.prototype = Object.create(Weapon.prototype);
+
+function Supercannon() {
+  Weapon.call(this);
+  this.cooltime = 100;
+  this.ammo = SuperBullet;
+}
+Supercannon.prototype = Object.create(Weapon.prototype);
+
 
 //var scene = 4;
 var currentShip;
@@ -317,8 +328,8 @@ instanceShip.prototype.constructor = instanceShip;
 instanceShip.prototype.display = function() {
   fill(2.55*(100-this.health), 2.55*this.health, 0, 100);
   text('Shields: ' + this.health + '%', 100, 100);
-  fill(5.1*(this.weapon.cooldown), 5.1*(50-this.weapon.cooldown), 0, 100);
-  text('Cannon Charge: ' + 2*(50-this.weapon.cooldown) + '%', 100, 160);
+  fill(5.1*(this.weapon.cooldown), (255/this.weapon.cooltime)*(this.weapon.cooltime-this.weapon.cooldown), 0, 100);
+  text('Cannon Charge: ' + (100/this.weapon.cooltime)*(this.weapon.cooltime-this.weapon.cooldown) + '%', 100, 160);
   push();
   translate(this.position.x, this.position.y);
   rotate(radians(this.orientation-90));
@@ -432,6 +443,8 @@ function Bullet(x, y, v) {
   this.health = 50;
   this.collisionRadius = 2;
   this.orientation = asin(this.velocity.y/this.velocity.mag())
+  this.color = color(255, 0, 0);
+  this.width = createVector(5, 30);
 }
 Bullet.prototype = Object.create(SpaceObject.prototype);
 Bullet.constructor = Bullet;
@@ -443,8 +456,8 @@ Bullet.prototype.display = function() {
   rotate(radians(this.orientation-90));
   //text(this.progress, 0, 0);
   stroke(255, 50, 50, 100);
-  fill(255, 0, 0);
-  ellipse(0, 0, 5, 30);
+  fill(this.color);
+  ellipse(0, 0, this.width.x, this.width.y);
   pop();
 
   this.health --;
@@ -454,6 +467,31 @@ Bullet.prototype.onEdge = function() {
   this.orientation = degrees(atan(this.velocity.y/this.velocity.x));
 };
 //Bullet.prototype.checkEdges = function() {};
+
+function HyperBullet(x, y, v) {
+  Bullet.call(this, x, y, v);
+  this.health = 20;
+  this.color = color(0, 255, 0);
+}
+HyperBullet.prototype = Object.create(Bullet.prototype);
+
+function LaserBeam(x, y, v) {
+  Bullet.call(this, x, y, v);
+  this.health = 100;
+  this.color = color(255, 150, 150);
+}
+LaserBeam.prototype = Object.create(Bullet.prototype);
+
+function SuperBullet(x, y, v) {
+  Bullet.call(this, x, y, v);
+  this.health = 100;
+  this.color = color(150, 150, 255);
+  this.collisionRadius = 30;
+  this.width = createVector(30, 30);
+  this.mass = 30;
+}
+SuperBullet.prototype = Object.create(Bullet.prototype);
+
 
 function nothing() {
   // Do nothing
