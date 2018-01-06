@@ -5,15 +5,164 @@ function setup() {
   createCanvas(1000, 700);
   textSize(40);
   gotoMenu();
+  currentShip = new Ship();
+  currentShip.wings = new Zephyrates();
+  currentShip.engine = new Cyclomaniac();
+  currentShip.weapon = new Weapon();
+  console.log(currentShip);
 }
 var timer;
+
+function quadAttitudeSteer(wings, orientation) {
+  var quadrant = wings.quadrant(orientation);
+  //console.log(quadrant);
+  if (keyIsPressed && keyCode == UP_ARROW) {
+    if (quadrant === 1 || quadrant === 2 || quadrant === 12 || quadrant === 23) {
+      orientation -= wings.agility;
+    } else {
+      orientation += wings.agility;
+    }
+  }
+  if (keyIsPressed && keyCode == DOWN_ARROW) {
+    if (quadrant === 3 || quadrant === 4 || quadrant === 41 || quadrant === 34) {
+      orientation -= wings.agility;
+    } else {
+      orientation += wings.agility;
+    }
+  }
+  if (keyIsPressed && keyCode == RIGHT_ARROW) {
+    if (quadrant === 2 || quadrant === 3 || quadrant === 34 || quadrant === 23) {
+      orientation -= wings.agility;
+    } else {
+      orientation += wings.agility;
+    }
+  }
+  if (keyIsPressed && keyCode == LEFT_ARROW) {
+    if (quadrant === 1 || quadrant === 4 || quadrant === 41 || quadrant === 12) {
+      orientation -= wings.agility;
+    } else {
+      orientation += wings.agility;
+    }
+  }
+  return orientation;
+};
+
+
+function Ship() {
+};
+
+function Wings() {
+  this.agility = 5;
+  this.steerMode = quadAttitudeSteer;
+  this.mass = 0.2;
+};
+Wings.prototype.quadrant = function(orientation) {
+  //console.log(orientation);
+  orientation = orientation % 360;
+
+  if (orientation < 0) {
+    orientation += 360;
+  }
+  var q;
+  if (orientation > 0 && orientation < 90) {
+    q = 1;
+  } else if (orientation > 90 && orientation < 180) {
+    q = 2;
+  } else if (orientation > 180 && orientation < 270) {
+    q = 3;
+  } else if (orientation > 270 && orientation < 360) {
+    q = 4;
+  } else if (orientation === 0 || orientation === 360) {
+    q = 41;
+  } else if (orientation === 90) {
+    q = 12;
+  } else if (orientation === 180) {
+    q = 23;
+  } else if (orientation === 270) {
+    q = 34;
+  }
+  //console.log(q);
+  return q;
+};
+Wings.prototype.steer = function(orientation) {
+  return this.steerMode(this, orientation);
+};
+
+function Engine() {
+  this.power = 0.2;
+  this.mass = 0.2;
+}
+Engine.prototype.thrust = function(protoShip) {
+  var force = createVector(0, 0);
+  if (keyIsPressed && key === ' ') {
+    force.x = this.power*sin(radians(protoShip.orientation));
+    force.y = -this.power*cos(radians(protoShip.orientation));
+  }
+  return force;
+};
+
+function Weapon() {
+  this.cooldown = 0;
+  this.mass = 0.2;
+}
+Weapon.prototype.engage = function(protoShip) {
+  if (keyIsPressed && key === 'a') {
+    if (this.cooldown === 0) {
+      this.fire(protoShip);
+      this.cooldown = 50;
+    }
+  }
+  if (this.cooldown > 0) {
+    this.cooldown --;
+  }
+};
+Weapon.prototype.fire = function(protoShip) {
+  var bulletVel = createVector(cos(radians(protoShip.orientation-90)), sin(radians(protoShip.orientation-90)))
+  bulletVel.mult(15);
+  particles.push(new Bullet(protoShip.position.x + 45*cos(radians(protoShip.orientation-90)), protoShip.position.y + 45*sin(radians(protoShip.orientation-90)), bulletVel));
+};
+
+function Poofer() {
+  Engine.call(this);
+  this.power = 0.1;
+}
+Poofer.prototype = Object.create(Engine.prototype);
+
+function Womper() {
+  Engine.call(this);
+  this.power = 0.3;
+}
+Womper.prototype = Object.create(Engine.prototype);
+
+function Cyclomaniac() {
+  Engine.call(this);
+  this.power = 1;
+  this.mass = 1;
+}
+Cyclomaniac.prototype = Object.create(Engine.prototype);
+
+function Aiglets() {
+  Wings.call(this);
+  this.agility = 3;
+}
+Aiglets.prototype = Object.create(Wings.prototype);
+
+function Zephyrates() {
+  Wings.call(this);
+  this.agility = 8;
+}
+Zephyrates.prototype = Object.create(Wings.prototype);
+
 //var scene = 4;
-var ship;
+var currentShip;
 var particles = [];
 var isover = false;
 var level = 1;
 var messages = ["You're still trash.", "You're worse than the garbage\n you just destroyed.", "You'll never amount to anything.", "Here you are sitting around \nplaying video games. This is why\nwe haven't cured cancer.", "Your most productive years were \nages 5 to 10. In that time you \ndid nothing.", ""];
 var message;
+var credits;
+var creditsEarned;
+
 
 function Button(x, y, text, onClick) {
   this.x = x;
@@ -133,21 +282,24 @@ SpaceObject.prototype.render = function() {
 }
 SpaceObject.prototype.onEdge = function() {};
 
-function Ship(x, y) {
+
+
+function instanceShip(x, y, protoShip) {
   SpaceObject.call(this, x, y);
-  this.agility = 5;
-  this.speed = 0.2;
   this.health = 100;
   this.mass = 1;
-  this.cooldown = 0;
+  this.wings = protoShip.wings;
+  this.engine = protoShip.engine;
+  this.weapon = protoShip.weapon;
+  this.mass += (this.wings.mass + this.engine.mass + this.weapon.mass);
 }
-Ship.prototype = Object.create(SpaceObject.prototype);
-Ship.prototype.constructor = Ship;
-Ship.prototype.display = function() {
+instanceShip.prototype = Object.create(SpaceObject.prototype);
+instanceShip.prototype.constructor = instanceShip;
+instanceShip.prototype.display = function() {
   fill(2.55*(100-this.health), 2.55*this.health, 0, 100);
   text('Shields: ' + this.health + '%', 100, 100);
-  fill(5.1*(this.cooldown), 5.1*(50-this.cooldown), 0, 100);
-  text('Cannon Charge: ' + 2*(50-this.cooldown) + '%', 100, 160);
+  fill(5.1*(this.weapon.cooldown), 5.1*(50-this.weapon.cooldown), 0, 100);
+  text('Cannon Charge: ' + 2*(50-this.weapon.cooldown) + '%', 100, 160);
   push();
   translate(this.position.x, this.position.y);
   rotate(radians(this.orientation-90));
@@ -176,85 +328,19 @@ Ship.prototype.display = function() {
   ellipse(this.position.x + 15*cos(radians(this.orientation-90)), this.position.y + 15*sin(radians(this.orientation-90)), 10, 10);
   pop();
 };
-Ship.prototype.quadrant = function() {
-  orientation = this.orientation%360;
-  if (orientation < 0) {
-    orientation += 360;
-  }
-  if (orientation > 0 && orientation < 90) {
-    return 1;
-  } else if (orientation > 90 && orientation < 180) {
-    return 2;
-  } else if (orientation > 180 && orientation < 270) {
-    return 3;
-  } else if (orientation > 270 && orientation < 360) {
-    return 4;
-  } else if (orientation === 0 || orientation === 360) {
-    return 41;
-  } else if (orientation === 90) {
-    return 12;
-  } else if (orientation === 180) {
-    return 23;
-  } else if (orientation === 270) {
-    return 34;
-  }
-};
-Ship.prototype.simulate = function() {
+instanceShip.prototype.simulate = function() {
   force = createVector(0, 0);
-  var quadrant = this.quadrant();
+  this.orientation = this.wings.steer(this.orientation);
+  this.force.add(this.engine.thrust(this));
+  this.weapon.engage(this);
 
-  if (keyIsPressed && keyCode == UP_ARROW) {
-    if (quadrant === 1 || quadrant === 2 || quadrant === 12 || quadrant === 23) {
-      this.orientation -= this.agility;
-    } else {
-      this.orientation += this.agility;
-    }
-  }
-  if (keyIsPressed && keyCode == DOWN_ARROW) {
-    if (quadrant === 3 || quadrant === 4 || quadrant === 41 || quadrant === 34) {
-      this.orientation -= this.agility;
-    } else {
-      this.orientation += this.agility;
-    }
-  }
-  if (keyIsPressed && keyCode == RIGHT_ARROW) {
-    if (quadrant === 2 || quadrant === 3 || quadrant === 34 || quadrant === 23) {
-      this.orientation -= this.agility;
-    } else {
-      this.orientation += this.agility;
-    }
-  }
-  if (keyIsPressed && keyCode == LEFT_ARROW) {
-    if (quadrant === 1 || quadrant === 4 || quadrant === 41 || quadrant === 12) {
-      this.orientation -= this.agility;
-    } else {
-      this.orientation += this.agility;
-    }
-  }
-  if (keyIsPressed && key === ' ') {
-    force.x = this.speed*sin(radians(orientation));
-    force.y = -this.speed*cos(radians(orientation));
-  }
-  this.force.add(force);
-
-  if (keyIsPressed && key === 'a') {
-    if (this.cooldown === 0) {
-      var bulletVel = createVector(cos(radians(this.orientation-90)), sin(radians(this.orientation-90)))
-      bulletVel.mult(15);
-      particles.push(new Bullet(this.position.x + 45*cos(radians(this.orientation-90)), this.position.y + 45*sin(radians(this.orientation-90)), bulletVel));
-      this.cooldown = 50;
-    }
-  }
-  if (this.cooldown > 0) {
-    this.cooldown --;
-  }
 };
-Ship.prototype.onCollide = function(o) {
+instanceShip.prototype.onCollide = function(o) {
   if (!(o instanceof Explosion)){
     this.health -= o.mass*10;
   }
 }
-Ship.prototype.onDeath = function() {
+instanceShip.prototype.onDeath = function() {
   return new Explosion(this.position.x, this.position.y, 30);
 };
 
@@ -355,10 +441,10 @@ function nothing() {
   console.log('Well, that did nothing.');
 }
 //var button;
-var bback, bstart, binfo;
+var bback, bstart, binfo, bplay, bship;
 function gotoMenu() {
   scene = 0;
-  bstart = new Button(380, 300, 'Start', gotoStart);
+  bplay = new Button(400, 300, 'Play', gotoMenu2);
   binfo = new Button(400, 450, 'Info', gotoInfo);
 }
 function gotoStart() {
@@ -366,7 +452,7 @@ function gotoStart() {
   scene = 1;
   var force;
   particles = [];
-  ship = new Ship(200, 200);
+  ship = new instanceShip(200, 200, currentShip);
   particles.push(ship);
   for (var i = 1; i <= 2 + 3*level; i++) {
     particles[i] = new Asteroid(random(0, 1000), random(0, 700));
@@ -379,7 +465,7 @@ function gotoStart() {
 }
 function gotoInfo() {
   scene = 2;
-  bback = new Button(320, 500, 'Back', gotoMenu);
+  bback = new Button(400, 550, 'Back', gotoMenu);
 }
 function gotoGameover() {
   scene = 3;
@@ -388,6 +474,33 @@ function gotoGameover() {
 function gotoWin() {
   scene = 4;
   message = messages[int(random(0, messages.length-1))]
+  creditsEarned = particles[0].health*level;
+  credits += creditsEarned;
+}
+function gotoMenu2() {
+  scene = 5;
+  bstart = new Button(380, 300, 'Start', gotoStart);
+  bship = new Button(400, 425, 'Ship', gotoShip);
+  bback = new Button(400, 550, 'Back', gotoMenu);
+}
+
+var item = 0;
+var maxItems = 10;
+var bleft, bright;
+function left() {
+  if (item > 0) {
+    item --;
+  }
+}
+function right() {
+  if (item < maxItems) {
+    item ++;
+  }
+}
+function gotoShip() {
+  scene = 6;
+  bleft = new Button(340, 550, '<', left);
+  bright = new Button(600, 550, '>', right);
 }
 
 function menu() {
@@ -397,8 +510,18 @@ function menu() {
   text('Space Trash Destroyer', 90, 190);
   textSize(40);
 
-  bstart.display();
+  bplay.display();
   binfo.display();
+}
+function menu2() {
+  background(9, 37, 84);
+  textSize(80);
+  fill(0, 255, 0, 100);
+  text('Space Trash Destroyer', 90, 190);
+  textSize(40);
+  bstart.display();
+  bship.display();
+  bback.display();
 }
 
 function info() {
@@ -461,6 +584,7 @@ function main() {
       timer = frameCount;
     } else if (particles.length === 1) {
       timer = frameCount;
+
       gotoWin();
     }
   }
@@ -470,7 +594,7 @@ function gameover() {
   //background(0, 0, 0);
   if ((frameCount - timer)/frameRate() > 2) {
     level = 1;
-    gotoMenu();
+    gotoMenu2();
   } else {
     main();
     fill(255, 0, 0);
@@ -486,9 +610,16 @@ function win() {
   } else {
     fill(255, 0, 0);
     textSize(40);
-    text('Mission Success!\n' + message, 370, 330);
+    text('Mission Success!\n' + message + '\nEarned ' + creditsEarned + ' credits.', 370, 330);
   }
 
+}
+
+function shipInfo() {
+  background(9, 37, 84);
+  text(item, 100, 100);
+  bleft.display();
+  bright.display();
 }
 
 function draw() {
@@ -503,6 +634,10 @@ function draw() {
     gameover();
   } else if (scene === 4) {
     win();
+  } else if (scene === 5) {
+    menu2();
+  } else if (scene === 6) {
+    shipInfo();
   }
 
 }
