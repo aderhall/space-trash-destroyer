@@ -8,7 +8,7 @@ function setup() {
   currentShip = new Ship();
   currentShip.wings = new Zephyrates();
   currentShip.engine = new Cyclomaniac();
-  currentShip.weapon = new Weapon();
+  currentShip.weapon = new Hyperbeam();
   console.log(currentShip);
 }
 var timer;
@@ -104,12 +104,13 @@ Engine.prototype.thrust = function(protoShip) {
 function Weapon() {
   this.cooldown = 0;
   this.mass = 0.2;
+  this.cooltime = 50;
 }
 Weapon.prototype.engage = function(protoShip) {
   if (keyIsPressed && key === 'a') {
     if (this.cooldown === 0) {
       this.fire(protoShip);
-      this.cooldown = 50;
+      this.cooldown = this.cooltime;
     }
   }
   if (this.cooldown > 0) {
@@ -152,6 +153,24 @@ function Zephyrates() {
   this.agility = 8;
 }
 Zephyrates.prototype = Object.create(Wings.prototype);
+
+function Blaster() {
+  Weapon.call(this);
+  this.cooltime = 50;
+}
+Laser.prototype = Object.create(Weapon.prototype);
+
+function Laser() {
+  Weapon.call(this);
+  this.cooltime = 20;
+}
+Laser.prototype = Object.create(Weapon.prototype);
+
+function Hyperbeam() {
+  Weapon.call(this);
+  this.cooltime = 5;
+}
+Hyperbeam.prototype = Object.create(Weapon.prototype);
 
 //var scene = 4;
 var currentShip;
