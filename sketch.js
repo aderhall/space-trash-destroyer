@@ -6,9 +6,9 @@ function setup() {
   textSize(40);
   gotoMenu();
   currentShip = new Ship();
-  currentShip.wings = new Zephyrates();
-  currentShip.engine = new Cyclomaniac();
-  currentShip.weapon = new Supercannon();
+  currentShip.wings = new Aiglets();
+  currentShip.engine = new Womper();
+  currentShip.weapon = new Blaster();
   console.log(currentShip);
 }
 var timer;
@@ -159,7 +159,7 @@ function Blaster() {
   Weapon.call(this);
   this.cooltime = 50;
 }
-Laser.prototype = Object.create(Weapon.prototype);
+Blaster.prototype = Object.create(Weapon.prototype);
 
 function Laser() {
   Weapon.call(this);
@@ -182,6 +182,12 @@ function Supercannon() {
 }
 Supercannon.prototype = Object.create(Weapon.prototype);
 
+function Unfairness() {
+  Weapon.call(this);
+  this.cooltime = 10;
+  this.ammo = SuperBullet;
+}
+Unfairness.prototype = Object.create(Weapon.prototype);
 
 //var scene = 4;
 var currentShip;
@@ -371,7 +377,7 @@ instanceShip.prototype.onCollide = function(o) {
   }
 }
 instanceShip.prototype.onDeath = function() {
-  return new Explosion(this.position.x, this.position.y, 30);
+  return [new Explosion(this.position.x, this.position.y, 30)];
 };
 
 
@@ -401,7 +407,7 @@ Asteroid.prototype.display = function() {
   pop();
 };
 Asteroid.prototype.onDeath = function() {
-  return new Explosion(this.position.x, this.position.y, 15);
+  return [new Explosion(this.position.x, this.position.y, 15)];
 };
 
 function Explosion(x, y, s) {
@@ -479,6 +485,7 @@ function LaserBeam(x, y, v) {
   Bullet.call(this, x, y, v);
   this.health = 100;
   this.color = color(255, 150, 150);
+  this.mass = 3;
 }
 LaserBeam.prototype = Object.create(Bullet.prototype);
 
@@ -491,6 +498,13 @@ function SuperBullet(x, y, v) {
   this.mass = 30;
 }
 SuperBullet.prototype = Object.create(Bullet.prototype);
+SuperBullet.prototype.onDeath = function() {
+  var death = [];
+  for (var i = 0; i < 14; i++) {
+    death.push(new Bullet(this.position.x, this.position.y, createVector(random(-13, 13), random(-13, 13))));
+  }
+  return death;
+};
 
 
 function nothing() {
@@ -608,7 +622,9 @@ function main() {
     if (particles[i].health <= 0) {
       death = particles[i].onDeath();
       if (death !== 0) {
-        particles.push(death);
+        for (var a = 0; a < death.length; a++) {
+          particles.push(death[a]);
+        }
       }
       particles.splice(i, 1);
     } else {
