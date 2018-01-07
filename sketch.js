@@ -8,7 +8,7 @@ function setup() {
   currentShip = new Ship();
   currentShip.wings = new Zephyrates();
   currentShip.engine = new Womper();
-  currentShip.weapon = new Hyperbeam();
+  currentShip.weapon = new Machineblaster();
   console.log(currentShip);
   keysDown = [];
 }
@@ -122,6 +122,11 @@ Wings.prototype.quadrant = function(orientation) {
 Wings.prototype.steer = function(orientation) {
   return this.steerMode(this, orientation);
 };
+Wings.prototype.display = function(protoShip) {
+  fill(200, 200, 200);
+  triangle(-10, 5, 10, 5, -10, 15);
+  triangle(-10, -5, 10, -5, -10, -15);
+}
 
 function Engine() {
   this.power = 0.2;
@@ -134,6 +139,14 @@ Engine.prototype.thrust = function(protoShip) {
     force.y = -this.power*cos(radians(protoShip.orientation));
   }
   return force;
+};
+Engine.prototype.display = function(protoShip) {
+  fill(0, 0, 0);
+  rect(-15, -5, 5, 10);
+  if (protoShip.force.mag() > 0) {
+    fill(255, 0, 0, 150);
+    ellipse(-30, 0, 15, 5+(frameCount%5));
+  }
 };
 
 function Weapon() {
@@ -159,6 +172,9 @@ Weapon.prototype.fire = function(protoShip) {
   bulletVel.mult(15);
   particles.push(new this.ammo(protoShip.position.x + 45*cos(radians(protoShip.orientation-90)), protoShip.position.y + 45*sin(radians(protoShip.orientation-90)), bulletVel));
 };
+Weapon.prototype.display = function(protoShip) {
+  ellipse(13, 0, 10, 3);
+};
 
 function Poofer() {
   Engine.call(this);
@@ -171,6 +187,14 @@ function Womper() {
   this.power = 0.3;
 }
 Womper.prototype = Object.create(Engine.prototype);
+Womper.prototype.display = function(protoShip) {
+  fill(0, 0, 0);
+  rect(-15, -5, 5, 10);
+  if (protoShip.force.mag() > 0) {
+    fill(255, 0, 255);
+    ellipse(-30-protoShip.velocity.mag()/3, 0, 15+protoShip.velocity.mag()/3, 5+(frameCount%8));
+  }
+};
 
 function Cyclomaniac() {
   Engine.call(this);
@@ -178,6 +202,14 @@ function Cyclomaniac() {
   this.mass = 1;
 }
 Cyclomaniac.prototype = Object.create(Engine.prototype);
+Cyclomaniac.prototype.display = function(protoShip) {
+  fill(0, 0, 0);
+  rect(-15-(frameCount%5), -5, 5, 10);
+  if (protoShip.force.mag() > 0) {
+    fill(0, 0, 255);
+    ellipse(-30-protoShip.velocity.mag()/3, 0, 15+protoShip.velocity.mag()/3, 5+(frameCount%8));
+  }
+};
 
 function Flaps() {
   Wings.call(this);
@@ -194,6 +226,11 @@ function Herons() {
   this.description = "These were at least designed to be wings. 70 years ago. Hope they still work!";
 }
 Herons.prototype = Object.create(Wings.prototype);
+Herons.prototype.display = function() {
+  fill(200, 0, 200);
+  triangle(-10, 5, 10, 5, -10, 15);
+  triangle(-10, -5, 10, -5, -10, -15);
+};
 
 function Aiglets() {
   Wings.call(this);
@@ -202,6 +239,12 @@ function Aiglets() {
   this.description = "Revolutionary wing technology allows you to point your ship in brand new directions, like 'up' and 'down.'";
 }
 Aiglets.prototype = Object.create(Wings.prototype);
+Aiglets.prototype.display = function() {
+  fill(0, 200, 200);
+  triangle(-15, 5, 20, 5, -10, 15);
+  triangle(-15, -5, 20, -5, -10, -15);
+};
+
 
 function Zephyrates() {
   Wings.call(this);
@@ -210,6 +253,11 @@ function Zephyrates() {
   this.description = "These things turn so fast that directions don't matter anymore. They'll fling your ship clockwise or counterclockwise at dizzying speeds.";
 }
 Zephyrates.prototype = Object.create(Wings.prototype);
+Zephyrates.prototype.display = function() {
+  fill(200, 0, 0);
+  triangle(-15, 5, 25, 5, -10, 20);
+  triangle(-15, -5, 25, -5, -10, -20);
+};
 
 function BBgun() {
   Weapon.call(this);
@@ -232,6 +280,11 @@ function Machineblaster() {
   this.description = "We stuck a bunch of blasters next to each other and made them fire in sequence. Warranty does not cover overheat damage.";
 }
 Machineblaster.prototype = Object.create(Weapon.prototype);
+Machineblaster.prototype.display = function() {
+  fill(100, 0, 0);
+  ellipse(13, 2, 10, 3);
+  ellipse(13, -2, 10, 3);
+};
 
 function Laser() {
   Weapon.call(this);
@@ -254,6 +307,7 @@ function Supercannon() {
   Weapon.call(this);
   this.cooltime = 100;
   this.ammo = SuperBullet;
+  this.description = "The engineering team budget form was accidentally multiplied by 100 due to a sticky zero key. The mistake was rectified in a few hours, but not until they had built this. Don't use it inside.";
 }
 Supercannon.prototype = Object.create(Weapon.prototype);
 
@@ -261,6 +315,7 @@ function Unfairness() {
   Weapon.call(this);
   this.cooltime = 10;
   this.ammo = SuperBullet;
+  this.description = "You can tell a hacker apart from the others by the fact that they never lose.";
 }
 Unfairness.prototype = Object.create(Weapon.prototype);
 
@@ -271,7 +326,7 @@ var isover = false;
 var level = 1;
 var messages = ["You're still trash.", "You're worse than the garbage\n you just destroyed.", "You'll never amount to anything.", "Here you are sitting around \nplaying video games. This is why\nwe haven't cured cancer.", "Your most productive years were \nages 5 to 10. In that time you \ndid nothing.", ""];
 var message;
-var credits;
+var credits = 0;
 var creditsEarned;
 
 
@@ -416,12 +471,12 @@ instanceShip.prototype.display = function() {
   rotate(radians(this.orientation-90));
   fill(200, 200, 200);
   rect(-10, -5, 20, 10);
-  triangle(-10, 5, 10, 5, -10, 15);
-  triangle(-10, -5, 10, -5, -10, -15);
-  if (this.force.mag() > 0) {
-    fill(255, 0, 0);
-    ellipse(-30, 0, 15, 5);
-  }
+
+  this.wings.display(this);
+
+  this.engine.display(this);
+
+  this.weapon.display(this);
   pop();
   push();
   if (random(0, this.health) > 20) {
@@ -751,7 +806,7 @@ function main() {
       timer = frameCount;
     } else if (particles.length === 1) {
       timer = frameCount;
-
+      isover = true;
       gotoWin();
     }
   }
@@ -771,6 +826,7 @@ function gameover() {
 }
 
 function win() {
+  main();
   if ((frameCount - timer)/frameRate() > 2) {
     level ++;
     gotoStart();
@@ -845,5 +901,6 @@ function draw() {
   } else if (scene === 6) {
     shipInfo();
   }
-
+  fill(0, 255, 0, 100);
+  text(credits + ' Credits', 10, 40);
 }
