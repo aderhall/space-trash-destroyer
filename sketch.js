@@ -6,38 +6,45 @@ function setup() {
   textSize(40);
   gotoMenu();
   currentShip = new Ship();
-  currentShip.wings = new Aiglets();
+  currentShip.wings = new Zephyrates();
   currentShip.engine = new Womper();
-  currentShip.weapon = new Blaster();
+  currentShip.weapon = new Hyperbeam();
   console.log(currentShip);
+  keysDown = [];
 }
 var timer;
+
+var LEFT = 37;
+var UP = 38;
+var RIGHT = 39;
+var DOWN = 40;
+var SPACE = 32;
 
 function quadAttitudeSteer(wings, orientation) {
   var quadrant = wings.quadrant(orientation);
   //console.log(quadrant);
-  if (keyIsPressed && keyCode == UP_ARROW) {
+  if (keyDown(38)) {
     if (quadrant === 1 || quadrant === 2 || quadrant === 12 || quadrant === 23) {
       orientation -= wings.agility;
     } else {
       orientation += wings.agility;
     }
   }
-  if (keyIsPressed && keyCode == DOWN_ARROW) {
+  if (keyDown(40)) {
     if (quadrant === 3 || quadrant === 4 || quadrant === 41 || quadrant === 34) {
       orientation -= wings.agility;
     } else {
       orientation += wings.agility;
     }
   }
-  if (keyIsPressed && keyCode == RIGHT_ARROW) {
+  if (keyDown(39)) {
     if (quadrant === 2 || quadrant === 3 || quadrant === 34 || quadrant === 23) {
       orientation -= wings.agility;
     } else {
       orientation += wings.agility;
     }
   }
-  if (keyIsPressed && keyCode == LEFT_ARROW) {
+  if (keyDown(37)) {
     if (quadrant === 1 || quadrant === 4 || quadrant === 41 || quadrant === 12) {
       orientation -= wings.agility;
     } else {
@@ -47,6 +54,34 @@ function quadAttitudeSteer(wings, orientation) {
   return orientation;
 };
 
+function biAttitudeSteer(wings, orientation) {
+  var quadrant = wings.quadrant(orientation);
+  if (keyDown(39)) {
+    if (quadrant === 2 || quadrant === 3 || quadrant === 34 || quadrant === 23) {
+      orientation -= wings.agility;
+    } else {
+      orientation += wings.agility;
+    }
+  }
+  if (keyDown(37)) {
+    if (quadrant === 1 || quadrant === 4 || quadrant === 41 || quadrant === 12) {
+      orientation -= wings.agility;
+    } else {
+      orientation += wings.agility;
+    }
+  }
+  return orientation;
+}
+
+function clockSteer(wings, orientation) {
+  if (keyDown(37)) {
+    orientation -= wings.agility;
+  }
+  if (keyDown(39)) {
+    orientation += wings.agility;
+  }
+  return orientation;
+}
 
 function Ship() {
 };
@@ -94,7 +129,7 @@ function Engine() {
 }
 Engine.prototype.thrust = function(protoShip) {
   var force = createVector(0, 0);
-  if (keyIsPressed && key === ' ') {
+  if (keyDown(32)) {
     force.x = this.power*sin(radians(protoShip.orientation));
     force.y = -this.power*cos(radians(protoShip.orientation));
   }
@@ -106,9 +141,10 @@ function Weapon() {
   this.mass = 0.2;
   this.cooltime = 50;
   this.ammo = Bullet;
+  this.velocity = 1;
 }
 Weapon.prototype.engage = function(protoShip) {
-  if (keyIsPressed && key === 'a') {
+  if (keyDown('A')) {
     if (this.cooldown === 0) {
       this.fire(protoShip);
       this.cooldown = this.cooltime;
@@ -119,7 +155,7 @@ Weapon.prototype.engage = function(protoShip) {
   }
 };
 Weapon.prototype.fire = function(protoShip) {
-  var bulletVel = createVector(cos(radians(protoShip.orientation-90)), sin(radians(protoShip.orientation-90)))
+  var bulletVel = createVector(this.velocity*cos(radians(protoShip.orientation-90)), this.velocity*sin(radians(protoShip.orientation-90)))
   bulletVel.mult(15);
   particles.push(new this.ammo(protoShip.position.x + 45*cos(radians(protoShip.orientation-90)), protoShip.position.y + 45*sin(radians(protoShip.orientation-90)), bulletVel));
 };
@@ -143,28 +179,65 @@ function Cyclomaniac() {
 }
 Cyclomaniac.prototype = Object.create(Engine.prototype);
 
-function Aiglets() {
+function Flaps() {
   Wings.call(this);
   this.agility = 3;
+  this.steerMode = biAttitudeSteer;
+  this.description = "Cute metal triangles. Wiggling them around can help you turn, sometimes.";
+}
+Flaps.prototype = Object.create(Wings.prototype);
+
+function Herons() {
+  Wings.call(this);
+  this.agility = 5;
+  this.steerMode = biAttitudeSteer;
+  this.description = "These were at least designed to be wings. 70 years ago. Hope they still work!";
+}
+Herons.prototype = Object.create(Wings.prototype);
+
+function Aiglets() {
+  Wings.call(this);
+  this.agility = 6;
+  this.steerMode = quadAttitudeSteer;
+  this.description = "Revolutionary wing technology allows you to point your ship in brand new directions, like 'up' and 'down.'";
 }
 Aiglets.prototype = Object.create(Wings.prototype);
 
 function Zephyrates() {
   Wings.call(this);
-  this.agility = 8;
+  this.agility = 10;
+  this.steerMode = clockSteer;
+  this.description = "These things turn so fast that directions don't matter anymore. They'll fling your ship clockwise or counterclockwise at dizzying speeds.";
 }
 Zephyrates.prototype = Object.create(Wings.prototype);
+
+function BBgun() {
+  Weapon.call(this);
+  this.cooltime = 50;
+  this.ammo = BBammo;
+  this.description = "Wait, they still make these things? It's 2328 for pete's sake!";
+}
+BBgun.prototype = Object.create(Weapon.prototype);
 
 function Blaster() {
   Weapon.call(this);
   this.cooltime = 50;
+  this.description = "Adapted from a BB gun to shoot long red pieces of plastic that you can pretend are lasers if you want.";
 }
 Blaster.prototype = Object.create(Weapon.prototype);
+
+function Machineblaster() {
+  Weapon.call(this);
+  this.cooltime = 20;
+  this.description = "We stuck a bunch of blasters next to each other and made them fire in sequence. Warranty does not cover overheat damage.";
+}
+Machineblaster.prototype = Object.create(Weapon.prototype);
 
 function Laser() {
   Weapon.call(this);
   this.cooltime = 20;
   this.ammo = LaserBeam;
+  this.description = "Shoots high-energy beams of deadly light. Do not point at reflective objects.";
 }
 Laser.prototype = Object.create(Weapon.prototype);
 
@@ -172,6 +245,8 @@ function Hyperbeam() {
   Weapon.call(this);
   this.cooltime = 5;
   this.ammo = HyperBullet;
+  this.velocity = 1.3;
+  this.description = "We developed a new type of bullet which causes minimal overheat. It's fragile and doesn't have a very long range, but boy is it fast!";
 }
 Hyperbeam.prototype = Object.create(Weapon.prototype);
 
@@ -481,13 +556,31 @@ function HyperBullet(x, y, v) {
 }
 HyperBullet.prototype = Object.create(Bullet.prototype);
 
+function BBammo(x, y, v) {
+  Bullet.call(this, x, y, v);
+  this.color = color(150, 150, 150);
+  this.width = createVector(5, 5);
+  this.mass = 0.2;
+}
+BBammo.prototype = Object.create(Bullet.prototype);
+
+
 function LaserBeam(x, y, v) {
   Bullet.call(this, x, y, v);
   this.health = 100;
   this.color = color(255, 150, 150);
   this.mass = 3;
+  this.pm;
 }
 LaserBeam.prototype = Object.create(Bullet.prototype);
+LaserBeam.prototype.simulate = function() {
+  this.pm = this.velocity.mag();
+};
+LaserBeam.prototype.onCollide = function() {
+  this.velocity.normalize();
+  this.velocity.mult(this.pm);
+  this.health *= 0.1;
+};
 
 function SuperBullet(x, y, v) {
   Bullet.call(this, x, y, v);
@@ -519,6 +612,7 @@ function gotoMenu() {
   binfo = new Button(400, 450, 'Info', gotoInfo);
 }
 function gotoStart() {
+  keysDown = [];
   isover = false;
   scene = 1;
   var force;
@@ -695,7 +789,46 @@ function shipInfo() {
   bright.display();
 }
 
+var keysDown = [];
+
+function keyDown(testingKey) {
+  //console.log(testingKey);
+  if (keysDown.indexOf(testingKey) > -1) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function keyPressed() {
+  keysDown.push(getKey());
+  //console.log(keysDown);
+}
+
+function keyReleased() {
+  keysDown.splice(keysDown.indexOf(getKey()), 1)
+  //console.log(keysDown);
+}
+
+var getKey = function() {
+
+  var code;
+  //console.log(key.charCodeAt(0))
+  if (key.charCodeAt(0) < 123 && key.charCodeAt(0) > 47) {
+    code = key;
+    //console.log('Key');
+  } else if (keyCode !== undefined) {
+    code = keyCode;
+    //console.log('KeyCode');
+  }
+
+  return code;
+};
+
 function draw() {
+  if (frameCount === 1) {
+    keysDown = [];
+  }
   //background(245, 235, 223);
   if (scene === 0) {
     menu();
